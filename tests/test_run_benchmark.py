@@ -24,7 +24,7 @@ def test_run_creates_expected_outputs(tmp_path, monkeypatch):
 
     run_benchmark(cfg())
 
-    base = tmp_path / "outputs/results/DummyTask_NPE/sims_10"
+    base = tmp_path / "outputs/results/DummyTask/NPE/sims_10"
     assert base.exists(), "Output directory was not created"
 
     metrics_file = base / "metrics.csv"
@@ -37,6 +37,6 @@ def test_no_duplicates(tmp_path, monkeypatch):
 
     run_benchmark(cfg())
 
-    metrics_file = tmp_path / "outputs/results/DummyTask_NPE/sims_10/metrics.csv"
+    metrics_file = tmp_path / "outputs/results/DummyTask/NPE/sims_10/metrics.csv"
     df = pd.read_csv(metrics_file)
     assert len(df) == 2, "Expected two rows for two observations"

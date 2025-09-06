@@ -86,7 +86,7 @@ def run_benchmark(config):
 
     # Save metrics.csv
     task_class_name = task.__class__.__name__
-    outdir = Path(f"outputs/results/{task_class_name}_{method}/sims_{num_simulations}")
+    outdir = Path(f"outputs/results/{task_class_name}/{method}/sims_{num_simulations}")
     outdir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(all_metrics)

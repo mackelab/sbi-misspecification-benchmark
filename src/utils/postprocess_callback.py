@@ -48,7 +48,8 @@ class PostProcessCallback(Callback):
 
             metrics_path = (
                 Path("outputs/results")
-                / f"{task_class_name}_{method}"
+                / f"{task_class_name}" 
+                / f"{method}"
                 / f"sims_{num_simulations}"
                 / "metrics.csv"
             )
@@ -79,8 +80,8 @@ class PostProcessCallback(Callback):
             task = row["task"]
             method = row["method"]
             parents_dir = Path("outputs/results") 
-            input_dir = parents_dir / f"{task}_{method}" / f"sims_{num_simulations}"
-            output_file = parents_dir / f"{task}_{method}" / "sims_consolidated.csv"
+            input_dir = parents_dir / f"{task}" / f"{method}" / f"sims_{num_simulations}"
+            output_file = parents_dir / f"{task}" / f"{method}" / "sims_consolidated.csv"
 
             consolidate_metrics(
                 input_dir=input_dir,

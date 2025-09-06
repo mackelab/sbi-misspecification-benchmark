@@ -33,7 +33,7 @@ def create_dummy_csv(path: Path, task: str, method: str, num_sim: int, obs_idx: 
 
 def test_consolidate_multiple_results(tmp_path):
     # Create a temporary base directory with two runs of the same Task/Method but different Sims/Obs folder
-    base = tmp_path / "outputs" / "TaskA_MethodA" 
+    base = tmp_path / "outputs" / "TaskA" / "MethodA" 
 
     # run1
     p1 = base / "sims_10" / "metrics.csv"
@@ -69,7 +69,7 @@ def test_consolidate_no_files(tmp_path):
 
 
 def test_consolidate_unreadable_files(tmp_path):
-    base = tmp_path / "outputs" / "Task_Method" / "sims_1"
+    base = tmp_path / "outputs" / "Task" / "Method" / "sims_1"
     csv_path = base / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -85,7 +85,7 @@ def test_consolidate_unreadable_files(tmp_path):
 
 def test_consolidate_missing_required_column(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv missing a required column
-    base = tmp_path / "outputs" / "Task_Method" / "sims_1"
+    base = tmp_path / "outputs" / "Task" / "Method" / "sims_1"
     csv_path = base  / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -109,7 +109,7 @@ def test_consolidate_missing_required_column(tmp_path):
 
 def test_consolidate_missing_value_in_required_column(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv containing a missing required value
-    base = tmp_path / "outputs" / "Task_Method" / "sims_3"
+    base = tmp_path / "outputs" / "Task" / "Method" / "sims_3"
     csv_path = base  / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -134,7 +134,7 @@ def test_consolidate_missing_value_in_required_column(tmp_path):
 
 def test_consolidate_required_columns_reordered(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv that has a different required_columns order
-    base = tmp_path / "outputs" / "Task_Method" / "sims_10"
+    base = tmp_path / "outputs" / "Task" / "Method" / "sims_10"
     bad_csv = base  / "metrics.csv"
     bad_csv.parent.mkdir(parents=True, exist_ok=True)
 
