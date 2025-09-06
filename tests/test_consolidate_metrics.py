@@ -33,18 +33,18 @@ def create_dummy_csv(path: Path, task: str, method: str, num_sim: int, obs_idx: 
 
 def test_consolidate_multiple_results(tmp_path):
     # Create a temporary base directory with two runs of the same Task/Method but different Sims/Obs folder
-    base = tmp_path / "outputs" / "TaskA_MethodA"
+    base = tmp_path / "outputs" / "TaskA_MethodA" 
 
     # run1
-    p1 = base / "sims_100" / "metrics.csv"
+    p1 = base / "sims_10" / "metrics.csv"
     create_dummy_csv(p1, "TaskA", "MethodA", 100, 0)
     # run2
-    p2 = base / "sims_200" / "metrics.csv"
+    p2 = base / "sims_100"/ "metrics.csv"
     create_dummy_csv(p2, "TaskA", "MethodA", 200, 1)
 
     # Consolidate the results under the given input directory and save it at the given output directory
     output_file = tmp_path / "combined.csv"
-    df = consolidate_metrics(input_dir=base, output_file=output_file)
+    df = consolidate_metrics(input_dir=base, output_file=output_file, pattern = "sims_*/metrics.csv")
 
     # Assert the new row length
     assert len(df) == 4
@@ -60,17 +60,17 @@ def test_consolidate_multiple_results(tmp_path):
 def test_consolidate_no_files(tmp_path):
     # Create an empty directory
     empty = tmp_path
-    output_file = tmp_path / "metrics_all.csv"
+    output_file = tmp_path /"sims_10" / "metrics.csv"
 
     # Assert that a FileNotFoundError is raised when no metrics.csv files exist
     with pytest.raises(FileNotFoundError) as exc:
-        consolidate_metrics(input_dir=empty, output_file=output_file)
-    assert "No metrics.csv under" in str(exc.value)
+        consolidate_metrics(input_dir=empty, output_file=output_file, pattern = "metrics.csv")
+    assert "No files matched" in str(exc.value)
 
 
 def test_consolidate_unreadable_files(tmp_path):
-    base = tmp_path / "outputs" / "Task_Method"
-    csv_path = base / "sims_1" / "metrics.csv"
+    base = tmp_path / "outputs" / "Task_Method" / "sims_1"
+    csv_path = base / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Create an empty file
@@ -79,14 +79,14 @@ def test_consolidate_unreadable_files(tmp_path):
     output_file = tmp_path / "out.csv"
     # Since read_csv_files will skip the bad file, frames will be empty and consolidate should raise
     with pytest.raises(FileNotFoundError) as exc:
-        consolidate_metrics(base, output_file)
+        consolidate_metrics(base, output_file, pattern = "metrics.csv")
     assert "Failed to read any CSVs" in str(exc.value)
 
 
 def test_consolidate_missing_required_column(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv missing a required column
-    base = tmp_path / "outputs" / "Task_Method"
-    csv_path = base / "sims_1" / "metrics.csv"
+    base = tmp_path / "outputs" / "Task_Method" / "sims_1"
+    csv_path = base  / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Build a DataFrame missing the 'method' column
@@ -103,14 +103,14 @@ def test_consolidate_missing_required_column(tmp_path):
     # Running consolidate() should raise a ValueError about the missing column
     output_file = tmp_path / "out.csv"
     with pytest.raises(ValueError) as exc:
-        consolidate_metrics(base, output_file)
+        consolidate_metrics(base, output_file, pattern = "metrics.csv")
     assert "Missing required columns" in str(exc.value)
 
 
 def test_consolidate_missing_value_in_required_column(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv containing a missing required value
-    base = tmp_path / "outputs" / "Task_Method"
-    csv_path = base / "sims_3" / "metrics.csv"
+    base = tmp_path / "outputs" / "Task_Method" / "sims_3"
+    csv_path = base  / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Build a DataFrame where the 'value' column has a missing entry
@@ -127,15 +127,15 @@ def test_consolidate_missing_value_in_required_column(tmp_path):
     # Running consolidate() should raise a ValueError about missing values
     output_file = tmp_path / "out.csv"
     with pytest.raises(ValueError) as exc:
-        consolidate_metrics(base, output_file)
+        consolidate_metrics(base, output_file, pattern = "metrics.csv")
 
     assert "Required columns contain missing values" in str(exc.value)
 
 
 def test_consolidate_required_columns_reordered(tmp_path):
     # Prepare a Task_Method folder with a metrics.csv that has a different required_columns order
-    base = tmp_path / "outputs" / "Task_Method"
-    bad_csv = base / "sims_10" / "metrics.csv"
+    base = tmp_path / "outputs" / "Task_Method" / "sims_10"
+    bad_csv = base  / "metrics.csv"
     bad_csv.parent.mkdir(parents=True, exist_ok=True)
 
     # Build a DataFrame with the wrong column order
@@ -151,7 +151,7 @@ def test_consolidate_required_columns_reordered(tmp_path):
 
     # Run consolidate()
     output_file = tmp_path / "dummy.csv"
-    result_df = consolidate_metrics(base, output_file)
+    result_df = consolidate_metrics(base, output_file, pattern = "metrics.csv")
 
     # Check that output file was created
     assert output_file.exists()
@@ -168,8 +168,8 @@ def test_consolidate_required_columns_reordered(tmp_path):
 
 
 def test_consolidate_extra_columns_reordered(tmp_path):
-    base = tmp_path / "outputs" / "Task_Method"
-    csv_path = base / "sims_5" / "metrics.csv"
+    base = tmp_path / "outputs" / "Task_Method" / "sims_5"
+    csv_path = base / "metrics.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Create a DataFrame with correct base fields, but two extra metadata columns in unsorted order
@@ -187,7 +187,7 @@ def test_consolidate_extra_columns_reordered(tmp_path):
 
     # Run consolidate() (should succeed, sorting extra columns automatically)
     output_file = tmp_path / "dummy.csv"
-    result_df = consolidate_metrics(base, output_file)
+    result_df = consolidate_metrics(base, output_file, pattern = "metrics.csv")
 
     # Check that output file was created
     assert output_file.exists()
