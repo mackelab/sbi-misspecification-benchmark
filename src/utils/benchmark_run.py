@@ -1,6 +1,5 @@
 import random
-import torch
-import os
+from pathlib import Path
 import pandas as pd
 from omegaconf import OmegaConf
 
@@ -60,55 +59,42 @@ def run_benchmark(config):
 
     )
     # Determine which metrics to compute based on config
-    metric_config = config.metric.name
-    compute_c2st = metric_config in ["c2st", "c2st_ppc"]
-    compute_ppc = metric_config in ["ppc", "c2st_ppc"]
+    metric_name = str(getattr(config.metric, "name", config.metric)).lower() # Read all metrics from config
+    metrics = [metric_name] if metric_name else [] # Default to empty list if no metric specified
+    print(f"Metrics resolved: {metrics}")
 
-    # Evaluation: collect all metrics for all obs, save one metrics.csv
+     # Evaluation: collect all metrics for all obs, save one metrics.csv
     all_metrics = []
     for obs_idx in range(num_observations):
-
-        x_o = observations[obs_idx]
-        metrics_dict = {"obs_idx": obs_idx, "task": task_name, "method": method}
-
-
-        if compute_c2st:
-            c2st_score = evaluate_inference(
+        for metric in metrics:
+            metric_name = metric
+            score = evaluate_inference(
                 task=task,
-                method_name=method,
-                metric_name="c2st",
-                num_simulations=num_simulations,
-                obs_offset=obs_idx,
+                method_name = method,
+                metric_name = metric_name,
+                num_simulations = num_simulations,
+                obs_offset = obs_idx,
             )
             all_metrics.append({
-                "metric": "c2st",
-                "value": c2st_score,
+                "metric": metric_name,
+                "value": score,
                 "task": task_name,
                 "method": method,
                 "num_simulations": num_simulations,
                 "observation_idx": obs_idx,
             })
 
-        if compute_ppc:
-            ppc_score = evaluate_inference(
-                task=task,
-                method_name=method,
-                metric_name="ppc",
-                num_simulations=num_simulations,
-                obs_offset=obs_idx,
-            )
-            all_metrics.append({
-                "metric": "ppc",
-                "value": ppc_score,
-                "task": task_name,
-                "method": method,
-                "num_simulations": num_simulations,
-                "observation_idx": obs_idx
-            })
-
     # Save metrics.csv
     task_class_name = task.__class__.__name__
-    outdir = f"outputs/{task_class_name}_{method}/sims_{num_simulations}"
-    os.makedirs(outdir, exist_ok=True)
-    pd.DataFrame(all_metrics).to_csv(os.path.join(outdir, "metrics.csv"), index=False)
-    print(f"Saved metrics ➜ {os.path.join(outdir, 'metrics.csv')}")
+    outdir = Path(f"outputs/results/{task_class_name}/{method}/sims_{num_simulations}")
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    df = pd.DataFrame(all_metrics)
+
+    if df.empty:
+        print("No metrics to save.")
+    else:
+        # Save results for all metrics in one metric.csv, also containing the metric name
+        csv_path = outdir / "metrics.csv"
+        df.to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)
+        print(f"Saved metric in ➜ {csv_path}")

@@ -19,7 +19,7 @@ def evaluate_inference(task, method_name, metric_name, num_simulations, obs_offs
     """
     idx = obs_offset
     task_name = task.__class__.__name__
-    obs_dir = Path(f"outputs/{task_name}_{method_name}/sims_{num_simulations}/obs_{idx}")
+    obs_dir = Path(f"outputs/{task_name}/{method_name}/sims_{num_simulations}/obs_{idx}")
     x_path = obs_dir/"x_obs.pt"
     post_path = obs_dir/"posterior_samples.pt"
 
