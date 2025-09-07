@@ -29,8 +29,14 @@ def parse_args():
         "--input_dir",
         type=Path,
         required=True,
-        help="Base directory containing sims_*/metrics.csv files to consolidate"
+        help="Base directory containing files to consolidate"
     )
+    p.add_argument(
+    "--pattern",
+    type=str,
+    default="sims_*/metrics.csv",
+    help="Glob pattern (relative to input_dir) to consolidate "
+)
     p.add_argument(
         "--output_file",
         type=Path,
@@ -40,9 +46,9 @@ def parse_args():
     return p.parse_args()
 
 
-def consolidate_metrics(input_dir: Path, output_file: Path) -> pd.DataFrame:
+def consolidate_metrics(input_dir: Path, output_file: Path, pattern: str) -> pd.DataFrame:
     """
-    Consolidate 'metrics.csv' files (of the same task and method) across simulations into one DataFrame.
+    Consolidate files matching the given pattern under input_di into one DataFrame.
 
     1. Gather all 'metrics.csv' files from all simulation subfolders 'sim_*' at given input directory `input_dir`
     2. Read and concatenate them into a single DataFrame.
@@ -52,20 +58,26 @@ def consolidate_metrics(input_dir: Path, output_file: Path) -> pd.DataFrame:
     Args:
         input_dir: Base directory under which to glob for sims_*/metrics.csv
         output_file: File path where to write the consolidated .csv file.
+        pattern: Glob pattern (e.g. 'sims_*/metrics.csv') to match files under input_dir.
 
     Returns:
         The consolidated DataFrame.
 
     Raises:
-        FileNotFoundError: If no metrics.csv files can be read or found.
+        FileNotFoundError: If no file matching the pattern can be read or found.
         ValueError: If base fieldnames are missing or contain missing values.
     """
     # 1) Merge CSV files
-    # 1.1) Gather all 'metrics.csv' files from all simulation subfolders 'sim_*' at given input directory `input_dir`
-    csv_paths = gather_csv_files(data_sources="sims_*/metrics.csv", base_directory=input_dir)
-    if not csv_paths:
-        raise FileNotFoundError(f"No metrics.csv under {input_dir!r}")
+    # 1.1) Gather all 'children files at given input directory `input_dir`
 
+    
+
+    csv_paths = gather_csv_files(data_sources=pattern, base_directory=input_dir)
+    if not csv_paths:
+        raise FileNotFoundError(f"No files matched {pattern!r} under {input_dir!r}")
+    
+
+    
     # 1.2) Read all .csv files
     frames = read_csv_files(csv_paths)
     if not frames:
@@ -97,7 +109,9 @@ def main():
     args = parse_args()
 
     try:
-        df = consolidate_metrics(input_dir=args.input_dir, output_file=args.output_file)
+        df = consolidate_metrics(input_dir=args.input_dir, 
+                                 output_file=args.output_file, 
+                                 pattern = args.pattern,)
     except (FileNotFoundError, ValueError) as e:
         print(e)
         sys.exit(1)

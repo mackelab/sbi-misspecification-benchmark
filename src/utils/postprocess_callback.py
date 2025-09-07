@@ -16,10 +16,16 @@ task_registry = {
 
 class PostProcessCallback(Callback):
     def on_multirun_end(self, config, **kwargs):
+        """
+        This method is called at the end of a Hydra multirun. It performs the following steps:
+        1) Gather run directories from the sweep directory.
+        2) Collect run information (task, method, num_simulations, metrics path).
+        3) Consolidate metrics and create plots.
+        """
+
         # 1) Gather run directories
         sweep_dir = Path(config.hydra.sweep.dir)                    # Sweep directory of the multirun
         job_dirs = [d for d in sweep_dir.iterdir() if d.is_dir()]   # Job directories of all the single runs
-
 
         # 2) Collect run information (config parameters + path to benchmark results) into a DataFrame
         run_records = []    # Each record will hold task, method, num_simulations and the path to its metrics.csv
@@ -40,8 +46,13 @@ class PostProcessCallback(Callback):
             method = str(cfg.inference.method)
             num_simulations = int(cfg.inference.num_simulations)
 
-            # Derive path to benchmark results file metrics.csv
-            metrics_path = Path("outputs") / f"{task_class_name}_{method}" / f"sims_{num_simulations}" / "metrics.csv"
+            metrics_path = (
+                Path("outputs/results")
+                / f"{task_class_name}" 
+                / f"{method}"
+                / f"sims_{num_simulations}"
+                / "metrics.csv"
+            )
 
             # Append record
             run_records.append({
@@ -53,7 +64,6 @@ class PostProcessCallback(Callback):
 
         df = pd.DataFrame(run_records)
 
-
         # 3) Visualize
         # 3.1) Get the data sources
         metrics_paths = df["metrics_path"].tolist()
@@ -62,26 +72,23 @@ class PostProcessCallback(Callback):
         # Get unique task-method pairs
         unique_task_methods = df[["task", "method"]].drop_duplicates()
 
-        if len(unique_task_methods) == 1:
-            # Only one unique task-method combination
-            task = unique_task_methods.iloc[0]["task"]
-            method = unique_task_methods.iloc[0]["method"]
-
-            save_directory = Path(f"outputs/{task}_{method}/plots")
-        else:
-            # Multiple task-method combinations
-            save_directory = Path("outputs/plots")
+        
+        save_directory = Path("outputs/results/plots")
 
         # 3.3) Consolidate metrics.csv files to metrics_all.csv files within their respective task_method folder
         for _, row in unique_task_methods.iterrows():
             task = row["task"]
             method = row["method"]
-            input_dir = Path("outputs") / f"{task}_{method}"    # TODO !! changed task to concrete
-            output_file = input_dir / "metrics_all.csv"
+            parents_dir = Path("outputs/results") 
+            input_dir = parents_dir / f"{task}" / f"{method}" / f"sims_{num_simulations}"
+            output_file = parents_dir / f"{task}" / f"{method}" / "sims_consolidated.csv"
 
-            consolidate_metrics(input_dir=input_dir, output_file=output_file)
+            consolidate_metrics(
+                input_dir=input_dir,
+                output_file=output_file,
+                pattern="metrics.csv"
+            )
 
-
-        # 3.3) Create and Save the Plot
+        # 3.4) Create and Save the Plot
         plotter = LinePlot(data_sources=metrics_paths, save_directory=save_directory)
         plotter.run()
