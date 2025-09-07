@@ -104,6 +104,8 @@ defaults:
   ``` 
 For more information on how to configure the `main.yaml` to run the benchmark take a look at the `docs\YAML_Configuration.md`.
 
+**3. Add Tests**   
+Remember to add tests for your new method, so that you can ensure correctness.
 
 
 ## Expected Behavior
