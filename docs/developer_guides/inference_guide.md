@@ -56,7 +56,7 @@ As we work with the SBI tool, in this benchmark project, we import the documenta
 
 
 **2. Add a new Config File**   
-if you add another method (either from SBI or implement it by yourself), add a new .yaml config file `src/configs/inference/mymethod.yaml` that specifies the parameters `method`, `num_simulations`, `num_observations` and `num_posterior_samples` for your new method. 
+If you add another method (either from SBI or implement it by yourself), add a new .yaml config file `src/configs/inference/mymethod.yaml` that specifies the parameters `method`, `num_simulations`, `num_observations` and `num_posterior_samples` for your new method. 
 
 *Example: mymethod.yaml*   
 ```yaml
