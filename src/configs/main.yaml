@@ -5,6 +5,7 @@ defaults:
   - _self_
 
 metrics_sweep: "c2st, ppc"
+inference_methods_sweep: "npe, nle"
 
 random_seed: 86
 postprocess: true
@@ -13,6 +14,7 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params: 
+      inference: ${inference_methods_sweep}
       metric: ${metrics_sweep} 
       inference.num_simulations: ${inference.num_simulations}
 
