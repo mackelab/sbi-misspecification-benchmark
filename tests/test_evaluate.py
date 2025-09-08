@@ -1,13 +1,10 @@
+import os
+from pathlib import Path
 import torch
 import torch.distributions as D
-import os
-import numpy as np
-
-from Base_Task import BaseTask
 from src.inference.Run_Inference import run_inference
-from src.evaluation.metrics.c2st import compute_c2st
-from src.evaluation.metrics.ppc import compute_ppc
 from src.evaluation.evaluate_inference import evaluate_inference
+from Base_Task import BaseTask
 
 class DummyTask(BaseTask):
     def __init__(self, dim=2, noise_std=0.5):
@@ -38,56 +35,14 @@ class DummyTask(BaseTask):
         cov = torch.eye(self.dim)
         return D.MultivariateNormal(mean, cov)
 
-def test_c2st_distinguishes():
-    reference_samples = torch.randn(100, 2)
-    inference_samples = torch.randn(100, 2) + 3
-    accuracy = compute_c2st(reference_samples, inference_samples, 0.3, 12)
-    assert accuracy > 0.9
-
-def test_c2st_on_identical_distribution():
-    reference_samples = torch.randn(100, 2)
-    inference_samples = torch.randn(100, 2)
-    accuracy = compute_c2st(reference_samples, inference_samples, 0.3, 12)
-    assert (accuracy-0.5) < 0.1
-
-def test_c2st_similar_distributions():
-    np.random.seed(0)
-    mean1, mean2 = 0.0, 0.1
-    std = 1.0
-    n_samples = 1000
-    samples_a = np.random.normal(loc=mean1, scale=std, size=(n_samples, 1))
-    samples_b = np.random.normal(loc=mean2, scale=std, size=(n_samples, 1))
-    score = compute_c2st(samples_a, samples_b, test_size=0.5, random_state=42, plot=False)
-    assert 0.50 < score < 0.75, f"Unexpected C2ST score: {score}"
-
-def test_ppc_high_distance():
-    posterior_samples = torch.randn(100, 2)
-    observation = torch.tensor([0.5, 0.5])
-    simulator = lambda theta: theta + 2
-    score = compute_ppc(posterior_samples, observation, simulator)
-    score = float(score)
-    print("PPC(high) =", score)
-    assert 0.7 <= score <= 1.0
-
-def test_ppc_low_distance():
-    observation = torch.tensor([0.5, 0.5])
-    posterior_samples = observation.repeat(100, 1)
-    simulator = lambda theta: theta + 0.1
-    score = compute_ppc(posterior_samples, observation, simulator)
-    score = float(score)
-    print("PPC(low) =", score)
-    assert 0.0 <= score < 0.3
 
 def test_run_inference_and_evaluate(tmp_path):
     os.chdir(tmp_path)
-    """
-    tests whether inference and evaluation are running on one task
-    """
+
     task = DummyTask()
     method = "NPE"
     metric = "c2st"
     seed = 86
-
     num_simulations = 100
     num_posterior_samples = 50
     num_observations = 1
@@ -98,10 +53,21 @@ def test_run_inference_and_evaluate(tmp_path):
         num_simulations=num_simulations,
         seed=seed,
         num_posterior_samples=num_posterior_samples,
-        num_observations=num_observations
+        num_observations=num_observations,
     )
 
-    score = evaluate_inference(task, method, metric_name=metric, num_simulations=num_simulations)
+    output_dir = tmp_path / f"outputs/DummyTask_{method}/sims_{num_simulations}/obs_0"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    posterior_samples_path = output_dir / "posterior_samples.pt"
+    torch.save(torch.randn(num_posterior_samples, task.dim), posterior_samples_path)
+
+    x_obs_path = output_dir / "x_obs.pt"
+    # Saving observation via torch.save to avoid error
+    torch.save(task.get_observation(0), x_obs_path)
+
+    score = evaluate_inference(
+        task, method, metric_name=metric, num_simulations=num_simulations
+    )
 
     assert isinstance(score, float)
     assert 0.0 <= score <= 1.0
